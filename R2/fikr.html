@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Animal Flashcards</title>
+  <style>
+    body {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    .flashcard {
+      width: 200px;
+      height: 300px;
+      perspective: 1200px;
+      cursor: pointer;
+      transition: transform 0.5s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      border-radius: 15px;
+      transform-style: preserve-3d;
+      background: linear-gradient(45deg, #ffcccb, #ffeb99);
+    }
+
+    .flashcard:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 15px;
+      font-size: 24px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .flashcard-front {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.1));
+      color: #333;
+    }
+
+    .flashcard-back {
+      background-color: #e0f7fa;
+      transform: rotateY(180deg);
+      color: #00796b;
+      padding: 10px;
+    }
+
+    .card-container {
+      display: flex;
+      gap: 20px;
+    }
+
+    #next-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    #next-button:disabled {
+      background-color: #aaa;
+    }
+
+    #next-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="flashcards-container" class="card-container"></div>
+  <button id="next-button" onclick="showNextCards()">Next Cards</button>
+
+  <script>
+    const animals = [
+      { front: "🦁 Lion", back: "Lions live in groups called prides." },
+      { front: "🐠 Fish", back: "Some fish can glow in the dark!" },
+      { front: "🐦 Bird", back: "Birds have hollow bones to help them fly." },
+      { front: "🐘 Elephant", back: "Elephants are the largest land animals." },
+      { front: "🐶 Dog", back: "Dogs are known as man's best friend." },
+      { front: "🐱 Cat", back: "Cats sleep for about 12-16 hours a day." },
+      { front: "🐯 Tiger", back: "Tigers are the largest species of big cats." },
+      { front: "🐍 Snake", back: "Some snakes can live for several months without food." },
+      { front: "🐸 Frog", back: "Frogs can jump over 20 times their body length." },
+      { front: "🐧 Penguin", back: "Penguins are excellent swimmers but cannot fly." },
+      { front: "🐨 Koala", back: "Koalas spend most of their life in eucalyptus trees." },
+      { front: "🐒 Monkey", back: "Monkeys are known for their playful behavior." },
+      { front: "🦓 Zebra", back: "No two zebras have the same stripe pattern." },
+      { front: "🐅 Leopard", back: "Leopards are known for their speed and stealth." },
+      { front: "🦔 Hedgehog", back: "Hedgehogs are nocturnal animals." },
+      { front: "🐉 Dragon", back: "Dragons are mythical creatures in many cultures." },
+      { front: "🦢 Swan", back: "Swans mate for life and are known for their grace." },
+      { front: "🐋 Whale", back: "Whales are the largest animals to have ever lived." },
+      { front: "🦓 Giraffe", back: "Giraffes are the tallest land animals." },
+      { front: "🦄 Unicorn", back: "Unicorns are legendary creatures depicted as horses with a single horn." },
+      { front: "🐅 Cheetah", back: "Cheetahs are the fastest land animals." },
+      { front: "🐘 Rhino", back: "Rhinos have thick skin that protects them from predators." },
+      { front: "🦈 Shark", back: "Sharks have existed for more than 400 million years." },
+      { front: "🐏 Sheep", back: "Sheep are social animals that live in herds." },
+      { front: "🐄 Cow", back: "Cows are known for producing milk and other dairy products." },
+      { front: "🦡 Badger", back: "Badgers are burrowing animals with strong claws." },
+      { front: "🐆 Leopard", back: "Leopards are known for their spotted coats." },
+      { front: "🦒 Giraffe", back: "Giraffes have long necks to reach high tree branches." },
+      { front: "🐗 Boar", back: "Wild boars have tusks and are found in forests." },
+      { front: "🦦 Otter", back: "Otters are playful animals that live in water." },
+      { front: "🦣 Camel", back: "Camels can survive without water for long periods." },
+      { front: "🐼 Panda", back: "Pandas are known for their love of bamboo." },
+      { front: "🦉 Owl", back: "Owls are nocturnal birds with excellent vision in the dark." }
+    ];
+
+    let currentIndex = 0;
+    let flippedCount = 0;
+
+    function createCard({ front, back }) {
+      const card = document.createElement('div');
+      card.classList.add('flashcard');
+      
+      const cardInner = document.createElement('div');
+      cardInner.classList.add('flashcard-inner');
+      
+      const cardFront = document.createElement('div');
+      cardFront.classList.add('flashcard-front');
+      cardFront.innerHTML = front;
+
+      const cardBack = document.createElement('div');
+      cardBack.classList.add('flashcard-back');
+      cardBack.innerHTML = back;
+
+      cardInner.appendChild(cardFront);
+      cardInner.appendChild(cardBack);
+      card.appendChild(cardInner);
+
+      card.addEventListener('click', () => {
+        card.classList.toggle('flipped');
+        flippedCount++;
+
+        // Enable the "Next Cards" button after all three cards are clicked
+        if (flippedCount === 3) {
+          document.getElementById('next-button').disabled = false;
+        }
+      });
+
+      return card;
+    }
+
+    function showNextCards() {
+      const container = document.getElementById('flashcards-container');
+      container.innerHTML = '';
+      flippedCount = 0;
+      document.getElementById('next-button').disabled = true; // Disable the "Next Cards" button
+
+      for (let i = 0; i < 3; i++) {
+        if (currentIndex < animals.length) {
+          const card = createCard(animals[currentIndex]);
+          container.appendChild(card);
+          currentIndex++;
+        }
+      }
+
+      if (currentIndex >= animals.length) {
+        alert("You've reached the end of the cards!");
+        document.getElementById('next-button').disabled = true;
+      }
+    }
+
+    showNextCards(); // Initial load of 3 cards
+
+  </script>
+
+</body>
+</html>
